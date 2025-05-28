@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	s := transport.NewServer("8080")
+	s := transport.NewServer(":8080")
 	if err := s.StartServer(); err != nil {
 		log.Fatal(err)
 	}

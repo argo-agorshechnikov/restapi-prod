@@ -21,13 +21,14 @@ func NewServer(port string) *Server {
 }
 
 func (s *Server) StartServer() error {
-	http.HandleFunc("/", helloHandler)
+	http.HandleFunc("/", homeHandler)
+	http.HandleFunc("/users", usersHandler)
 
 	s.logger.Info("Server start")
-	return http.ListenAndServe(":"+s.port, nil)
+	return http.ListenAndServe(s.port, nil)
 }
 
-func helloHandler(w http.ResponseWriter, r *http.Request) {
+func homeHandler(w http.ResponseWriter, r *http.Request) {
 
-	w.Write([]byte("Hello server!"))
+	w.Write([]byte("Home"))
 }
