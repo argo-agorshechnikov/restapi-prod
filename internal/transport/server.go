@@ -1,9 +1,12 @@
 package transport
 
 import (
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
+
+	"github.com/argo-agorshechnikov/restapi-prod/internal/database"
 )
 
 type Server struct {
@@ -21,6 +24,16 @@ func NewServer(port string) *Server {
 }
 
 func (s *Server) StartServer() error {
+
+	// connect to db
+	db, err := database.ConnectionDB("argo", "argo", "restapi_db", "localhost", 5432)
+	if err != nil {
+		log.Fatalf("Failed to connect to db: %v", err)
+	}
+
+	defer db.Close()
+	s.logger.Info("Successfully connection to restapi_db")
+
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/users", usersHandler)
 
