@@ -32,12 +32,15 @@ func (s *Server) StartServer() error {
 	if err != nil {
 		log.Fatalf("Failed to connect to db: %v", err)
 	}
+	// Save connection to db object in Server.db
 	s.db = db
 	defer db.Close()
 	s.logger.Info("Successfully connection to restapi_db")
 
+	// New router
 	mux := http.NewServeMux()
 
+	// Register handlers
 	mux.HandleFunc("GET /users", func(w http.ResponseWriter, r *http.Request) {
 		HandleGetUsers(w, r, s.db)
 	})
@@ -53,6 +56,7 @@ func (s *Server) StartServer() error {
 
 	mux.HandleFunc("/", homeHandler)
 
+	// Start server
 	s.logger.Info("Server start on port: " + s.port)
 	return http.ListenAndServe(s.port, mux)
 }
