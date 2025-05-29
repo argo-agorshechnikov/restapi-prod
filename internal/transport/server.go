@@ -47,6 +47,9 @@ func (s *Server) StartServer() error {
 	mux.HandleFunc("PUT /users/{id}", func(w http.ResponseWriter, r *http.Request) {
 		HandleUpdateUser(w, r, s.db)
 	})
+	mux.HandleFunc("DELETE /users/{id}", func(w http.ResponseWriter, r *http.Request) {
+		HandleDeleteUser(w, r, db)
+	})
 
 	mux.HandleFunc("/", homeHandler)
 

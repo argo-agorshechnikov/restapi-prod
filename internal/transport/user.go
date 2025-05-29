@@ -142,3 +142,41 @@ func HandleUpdateUser(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	}
 
 }
+
+func HandleDeleteUser(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+
+	// Get string value id from URL
+	idStr := r.PathValue("id")
+	if idStr == "" {
+		http.Error(w, "User ID is required", http.StatusBadRequest)
+		return
+	}
+
+	// Convert string to int
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	// Result sql-query
+	relust, err := db.Exec("DELETE FROM users WHERE id = $1", id)
+	if err != nil {
+		http.Error(w, "DB delete error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Check rows been changed(Deleted)
+	rowsAffected, err := relust.RowsAffected()
+	if err != nil {
+		http.Error(w, "Error check delete result: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if rowsAffected == 0 {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	// 204 status
+	w.WriteHeader(http.StatusNoContent)
+}
