@@ -35,7 +35,7 @@ func (s *Server) StartServer() error {
 	s.logger.Info("Successfully connection to restapi_db")
 
 	http.HandleFunc("/", homeHandler)
-	http.HandleFunc("/users", usersHandler)
+	http.HandleFunc("/users", usersHandler(db))
 
 	s.logger.Info("Server start")
 	return http.ListenAndServe(s.port, nil)
