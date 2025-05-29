@@ -5,34 +5,12 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/argo-agorshechnikov/restapi-prod/internal/models"
 )
 
-func usersHandler(db *sql.DB) http.HandlerFunc {
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			// Get users list
-			handleGetUsers(w, r, db)
-
-		case http.MethodPost:
-			// Create new user
-			handleCreateUser(w, r, db)
-
-		//case http.MethodPut:
-
-		//case http.MethodDelete:
-
-		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-	}
-
-}
-
-func handleCreateUser(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+func HandleCreateUser(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 	var user models.User
 
@@ -67,7 +45,7 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 }
 
-func handleGetUsers(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+func HandleGetUsers(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 	// get users from db
 	rows, err := db.Query("SELECT id, name, email FROM users")
@@ -105,4 +83,62 @@ func handleGetUsers(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		http.Error(w, "Error send users list", http.StatusBadRequest)
 		return
 	}
+
+}
+
+func HandleUpdateUser(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+
+	// Get value "id" from URL user/1 -> idStd == 1
+	idStr := r.PathValue("id")
+	if idStr == "" {
+		http.Error(w, "User ID is required", http.StatusBadRequest)
+		return
+	}
+
+	// idStr(string) -> int
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	// Decoder reads r.Body, decode parsing json to user struct
+	var user models.User
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close() // allows free up resources
+
+	// Exec return result sql-query and err
+	result, err := db.Exec(
+		"UPDATE users SET name = $1, email = $2 WHERE id = $3",
+		user.Name, user.Email, id,
+	)
+	if err != nil {
+		http.Error(w, "DB update error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// get count string which been change, it's allows check change user by id
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		http.Error(w, "Error check update result: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if rowsAffected == 0 {
+		http.Error(w, "User not found", http.StatusNotFound)
+	}
+
+	// Allows returned full user object
+	user.Id = id
+
+	// Set header response json
+	w.Header().Set("Content-Type", "application/json")
+	// Convert User to json
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		http.Error(w, "Error user update", http.StatusBadRequest)
+		return
+	}
+
 }
